@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "dalle-pictionary"
+version = "0.1.0"
+description = "Play pictionary with AI generated images"
+authors = ["Patrick Frank <patr.frank@gmx.de>"]
+license = "GPL-3.0-only"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+transformers = "^4.21.3"
+torch = "^1.12.1"
+fastapi = {extras = ["all"], version = "^0.82.0"}
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
