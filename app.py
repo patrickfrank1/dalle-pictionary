@@ -1,8 +1,3 @@
-from fastapi import FastAPI
+from backend.app import get_backend
 
-app = FastAPI()
-
-@app.get("/")
-def root() -> str:
-	return "App is up and ready to receive requests."
-
+backend = get_backend("./data/img/")
