@@ -6,6 +6,7 @@ import base64
 
 class Image(BaseModel):
 	id: str
+	description: str
 	base64: str
 
 def base64_encode_image(path: Path) -> str:
@@ -39,6 +40,9 @@ def get_backend(image_base_path: Path) -> FastAPI:
 	def get_image_as_json() -> Image:
 		return Image(
 			id=img_path[1],
+			description=text[1],
 			base64=base64_encode_image(Path(BASE_DIR+img_path[1]))
 		)
 	return app
+
+backend = get_backend("./data/img/")
