@@ -1,2 +1,5 @@
-### get a new image from endpoint
-GET http://127.0.0.1:8000/image
+### get a new image from endpoint as image file
+GET http://127.0.0.1:8000/image/file
+
+### get a new image from endpoint as base64 encoded json
+GET http://127.0.0.1:8000/image/json
