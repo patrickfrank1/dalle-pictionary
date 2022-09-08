@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel
 import base64
+from numpy.random import randint
 
 class Image(BaseModel):
 	id: str
@@ -25,6 +26,7 @@ def get_backend(image_base_path: Path) -> FastAPI:
 		"dinosaur_ice_cream.png",
 		"rainforest_utopia.png"
 	]
+	num_images = len(text)
 
 	app = FastAPI()
 
@@ -34,14 +36,16 @@ def get_backend(image_base_path: Path) -> FastAPI:
 
 	@app.get("/image/file", response_class=FileResponse)
 	def get_image_as_file() -> str:
-		return BASE_DIR+img_path[1]
+		index = randint(0, num_images)
+		return BASE_DIR+img_path[index]
 
 	@app.get("/image/json", response_model=Image)
 	def get_image_as_json() -> Image:
+		index = randint(0, num_images)
 		return Image(
-			id=img_path[1],
-			description=text[1],
-			base64=base64_encode_image(Path(BASE_DIR+img_path[1]))
+			id=img_path[index],
+			description=text[index],
+			base64=base64_encode_image(Path(BASE_DIR+img_path[index]))
 		)
 	return app
 

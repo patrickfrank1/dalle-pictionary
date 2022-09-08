@@ -1,38 +1,37 @@
 import gradio as gr
 import requests
 import base64
+from PIL import Image
+from io import BytesIO
 
 def decode_image(base64_image: str) -> str:
-	imgdata = base64.b64decode(base64_image)
-	filename = 'received_image.png'  # I assume you have a way of picking unique filenames
-	with open(filename, 'wb') as f:
-		f.write(imgdata)
-	return filename, f
+	im = Image.open(BytesIO(base64.b64decode(base64_image)))
+	return im
 
-def greet(name):
-	image_file = get_image()
-	return "Hello " + name + "!"
+def refresh_image():
+	response = requests.get("http://127.0.0.1:8000/image/json/").json()
+	base64_image = response["base64"]
+	image = decode_image(base64_image)
+	return response["id"], response["description"], image
 
-def get_image():
-	response = requests.get("http://127.0.0.1:8000/image/json/")
-	base64_image = response.json()["base64"]
-	image_file, _ = decode_image(base64_image)
-	image_description = response.json()["description"]
-	return image_file, image_description
+def get_similarity(actual_description, description_guess):
+	return int(actual_description == description_guess)
 
 def get_frontend():
 	with gr.Blocks() as demo:
 		with gr.Row():
 			with gr.Column():
-				img = gr.Image(get_image(), type="filepath", shape=(20,20))
+				__, _, im = refresh_image()
+				candidate_image = gr.Image(im ,type="pil", shape=(20,20))
 			with gr.Column():
-				actual_description = gr.Textbox(label="Actual image description", visible=False)
+				id = gr.Textbox(label="Id", visible=False)
+				actual_description = gr.Textbox(label="Actual description", visible=False)
 				description_guess = gr.Textbox(label="Image description guess")
-				similarity_score = gr.Textbox(label="Similarity score")
+				similarity_score = gr.Number(label="Similarity score")
 				new_image = gr.Button("Get new image")
-				new_image.click(fn=get_image, inputs=None, outputs=[img, actual_description])
+				new_image.click(fn=refresh_image, inputs=None, outputs=[id, actual_description, candidate_image])
 				submit = gr.Button("Submit")
-				submit.click(fn=greet, inputs=description_guess, outputs=similarity_score)
+				submit.click(fn=get_similarity, inputs=[actual_description, description_guess], outputs=similarity_score)
 	demo.launch()
 	return demo
 
