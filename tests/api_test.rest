@@ -1,0 +1,15 @@
+# start rest api with the following command
+# $ uvicorn app:app --reload
+
+### now check if api is ready
+http://127.0.0.1:8000/
+
+
+
+### or in rfc 2616 standard
+GET http://127.0.0.1:8000/ HTTP/1.1
+content-type: application/json
+
+### it is a GET request, so the request below should fail
+POST http://127.0.0.1:8000/ HTTP/1.1
+content-type: application/json
