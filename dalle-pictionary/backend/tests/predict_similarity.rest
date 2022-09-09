@@ -1,0 +1,9 @@
+### get similarity of two sentences
+
+POST http://127.0.0.1:8000/predict HTTP/1.1
+content-type: application/json
+
+{
+    "ground_truth": "That is a happy person",
+    "guess": "That is a happy dog"
+}

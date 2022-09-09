@@ -4,7 +4,7 @@ from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel
 import base64
 from numpy.random import randint
-from sentence_transformer import SentenceTransformer
+from .sentence_transformer import SentenceTransformer
 
 sentence_transformer = SentenceTransformer()
 
@@ -12,6 +12,10 @@ class Image(BaseModel):
 	id: str
 	description: str
 	base64: str
+
+class SentenceSimilarityQuery(BaseModel):
+	ground_truth: str
+	guess: str
 
 def base64_encode_image(path: Path) -> str:
 	with open(path, "rb") as image_file:
@@ -51,7 +55,14 @@ def get_backend(image_base_path: Path) -> FastAPI:
 			base64=base64_encode_image(Path(BASE_DIR+img_path[index]))
 		)
 
-	
+	@app.post("/predict")
+	def predict_sentence_similarity(description_pair: SentenceSimilarityQuery) -> float:
+		result = sentence_transformer.sentence_similarity(
+			source=description_pair.ground_truth,
+			query=description_pair.guess
+		)
+		return {"similarity": result.item()}
+
 	return app
 
 backend = get_backend("./data/img/")
