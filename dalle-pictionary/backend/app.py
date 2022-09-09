@@ -5,6 +5,8 @@ from pydantic import BaseModel
 import base64
 from numpy.random import randint
 from .sentence_transformer import SentenceTransformer
+from ..db import database
+
 
 sentence_transformer = SentenceTransformer()
 
