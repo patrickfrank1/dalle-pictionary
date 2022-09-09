@@ -14,6 +14,7 @@ transformers = "^4.21.3"
 torch = "^1.12.1"
 fastapi = {extras = ["all"], version = "^0.82.0"}
 gradio = "^3.2"
+SQLAlchemy = "^1.4.41"
 
 [tool.poetry.dev-dependencies]
 
