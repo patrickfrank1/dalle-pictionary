@@ -4,6 +4,9 @@ from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel
 import base64
 from numpy.random import randint
+from sentence_transformer import SentenceTransformer
+
+sentence_transformer = SentenceTransformer()
 
 class Image(BaseModel):
 	id: str
@@ -47,6 +50,8 @@ def get_backend(image_base_path: Path) -> FastAPI:
 			description=text[index],
 			base64=base64_encode_image(Path(BASE_DIR+img_path[index]))
 		)
+
+	
 	return app
 
 backend = get_backend("./data/img/")

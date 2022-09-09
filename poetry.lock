@@ -331,7 +331,7 @@ tqdm = ["tqdm"]
 
 [[package]]
 name = "gradio"
-version = "3.2"
+version = "3.3"
 description = "Python library for easily interacting with trained machine learning models"
 category = "main"
 optional = false
@@ -357,6 +357,7 @@ pycryptodome = "*"
 pydantic = "*"
 pydub = "*"
 python-multipart = "*"
+pyyaml = "*"
 requests = "*"
 uvicorn = "*"
 websockets = "*"

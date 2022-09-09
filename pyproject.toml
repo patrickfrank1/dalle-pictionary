@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "Play pictionary with AI generated images"
 authors = ["Patrick Frank <patr.frank@gmx.de>"]
 license = "GPL-3.0-only"
+packages = [
+    { include = "dalle-pictionary" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
