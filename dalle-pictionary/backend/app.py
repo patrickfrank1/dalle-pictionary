@@ -1,68 +1,61 @@
 from pathlib import Path
-from fastapi import FastAPI
-from fastapi.responses import Response, FileResponse
-from pydantic import BaseModel
+from typing import Generator
+from fastapi import FastAPI, Depends
 import base64
+from pydantic import BaseModel
 from numpy.random import randint
+from sqlalchemy.orm import Session
 from .sentence_transformer import SentenceTransformer
+from ..db import database, crud, schemas
 
-sentence_transformer = SentenceTransformer()
-
-class Image(BaseModel):
-	id: str
-	description: str
-	base64: str
-
-class SentenceSimilarityQuery(BaseModel):
-	ground_truth: str
-	guess: str
+def get_db() -> Generator:
+	try:
+		db = database.SessionLocal()
+		yield db
+	finally:
+		db.close()
 
 def base64_encode_image(path: Path) -> str:
 	with open(path, "rb") as image_file:
 		encoded_image_string = base64.b64encode(image_file.read())
 	return encoded_image_string
 
+class SimilarityQuery(BaseModel):
+	image_id: int
+	actual_description: str
+	guess_description:str
+	leaderboard_name: str = "John Doe"
 
 def get_backend(image_base_path: Path) -> FastAPI:
-	BASE_DIR = image_base_path
-	text = [
-		"A dinosaur hunting down an ice cream truck",
-		"A high tech solarpunk utopia in the Amazon rainforest"
-	]
-	img_path = [
-		"dinosaur_ice_cream.png",
-		"rainforest_utopia.png"
-	]
-	num_images = len(text)
-
+	
 	app = FastAPI()
 
 	@app.get("/")
 	def root() -> str:
 		return "App is up and ready to receive requests."
 
-	@app.get("/image/file", response_class=FileResponse)
-	def get_image_as_file() -> str:
-		index = randint(0, num_images)
-		return BASE_DIR+img_path[index]
+	@app.get("/image/json", response_model=schemas.Image)
+	def get_image_as_json(db: Session = Depends(get_db)) -> schemas.Image:
+		index = randint(0, NUM_IMAGES) + 1
+		return crud.get_image(db, index)
 
-	@app.get("/image/json", response_model=Image)
-	def get_image_as_json() -> Image:
-		index = randint(0, num_images)
-		return Image(
-			id=img_path[index],
-			description=text[index],
-			base64=base64_encode_image(Path(BASE_DIR+img_path[index]))
-		)
-
-	@app.post("/predict")
-	def predict_sentence_similarity(description_pair: SentenceSimilarityQuery) -> float:
+	@app.post("/predict", response_model=schemas.Prediction)
+	def predict_sentence_similarity(query: SimilarityQuery, db: Session = Depends(get_db)) -> float:
 		result = sentence_transformer.sentence_similarity(
-			source=description_pair.ground_truth,
-			query=description_pair.guess
+			source=query.actual_description,
+			query=query.guess_description
+		).item()
+		prediction = schemas.PredictionCreate(
+			image_id=query.image_id,
+			leaderboard_name=query.leaderboard_name,
+			guess_description=query.guess_description,
+			similarity_score=result
 		)
-		return {"similarity": result.item()}
+		return crud.create_prediction(db, prediction)
 
 	return app
+
+sentence_transformer = SentenceTransformer()
+NUM_IMAGES = crud.get_number_of_images(get_db().__next__())
 
 backend = get_backend("./data/img/")

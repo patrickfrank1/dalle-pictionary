@@ -1,3 +1,4 @@
+from pydoc import resolve
 import gradio as gr
 import requests
 import base64
@@ -14,17 +15,23 @@ def refresh_image():
 	image = decode_image(base64_image)
 	return response["id"], response["description"], image
 
-def get_similarity(actual_description, description_guess):
+def get_similarity(image_id, actual_description, guess_description, leaderboard_name="John Dough"):
+	print(image_id, actual_description, guess_description, leaderboard_name)
 	response = requests.post(
 		"http://127.0.0.1:8000/predict",
 		json={
-			"ground_truth":actual_description,
-			"guess": description_guess
+			"image_id": image_id,
+			"leaderboard_name": leaderboard_name,
+			"actual_description": actual_description,
+			"guess_description": guess_description
 		}
 	).json()
-	return response["similarity"]
+	print(response)
+	return response["similarity_score"]
 
 def get_frontend():
+	initial_id, initial_description, initial_image = refresh_image()
+	print(initial_id, initial_description, initial_image)
 	with gr.Blocks() as demo:
 		with gr.Row():
 			introduction = gr.Markdown("""
@@ -41,17 +48,17 @@ def get_frontend():
 			""")
 		with gr.Row():
 			with gr.Column(scale=1):
-				__, _, im = refresh_image()
-				candidate_image = gr.Image(im ,type="pil", shape=(20,20))
+				candidate_image = gr.Image(initial_image ,type="pil", shape=(20,20))
 			with gr.Column(scale=2):
-				id = gr.Textbox(label="Id", visible=False)
-				actual_description = gr.Textbox(label="Actual description", visible=False)
+				id = gr.Textbox(value=initial_id, label="Id", visible=False)
+				actual_description = gr.Textbox(value=initial_description, label="Actual description", visible=False)
+				leaderboard_name = gr.Textbox(label="Name on Leaderboard", placeholder="John Dough")
 				description_guess = gr.Textbox(label="Image description guess")
 				similarity_score = gr.Number(label="Similarity score")
+				submit = gr.Button("Submit")
+				submit.click(fn=get_similarity, inputs=[id, actual_description, description_guess, leaderboard_name], outputs=similarity_score)
 				new_image = gr.Button("Get new image")
 				new_image.click(fn=refresh_image, inputs=None, outputs=[id, actual_description, candidate_image])
-				submit = gr.Button("Submit")
-				submit.click(fn=get_similarity, inputs=[actual_description, description_guess], outputs=similarity_score)
 	demo.launch()
 	return demo
 

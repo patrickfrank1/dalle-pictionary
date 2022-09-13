@@ -14,8 +14,11 @@ transformers = "^4.21.3"
 torch = "^1.12.1"
 fastapi = {extras = ["all"], version = "^0.82.0"}
 gradio = "^3.2"
+SQLAlchemy = "^1.4.41"
+SQLAlchemy-Utils = "^0.38.3"
 
 [tool.poetry.dev-dependencies]
+ipykernel = "^6.15.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
