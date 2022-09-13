@@ -1,0 +1,5 @@
+### get top 5 predictions to a specific image
+GET http://127.0.0.1:8000/leaderboard?image_id=1
+
+### get top 2 predictions to a specific image
+GET http://127.0.0.1:8000/leaderboard?image_id=1&k=2

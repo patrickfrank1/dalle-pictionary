@@ -4,6 +4,7 @@ import requests
 import base64
 from PIL import Image
 from io import BytesIO
+import pandas as pd
 
 def decode_image(base64_image: str) -> str:
 	im = Image.open(BytesIO(base64.b64decode(base64_image)))
@@ -11,12 +12,13 @@ def decode_image(base64_image: str) -> str:
 
 def refresh_image():
 	response = requests.get("http://127.0.0.1:8000/image/json/").json()
+	image_id = response["id"]
 	base64_image = response["base64"]
 	image = decode_image(base64_image)
-	return response["id"], response["description"], image
+	leaderboard = get_leaderboard(image_id, k=10)
+	return image_id, response["description"], image, None, None, None, leaderboard
 
 def get_similarity(image_id, actual_description, guess_description, leaderboard_name="John Dough"):
-	print(image_id, actual_description, guess_description, leaderboard_name)
 	response = requests.post(
 		"http://127.0.0.1:8000/predict",
 		json={
@@ -26,12 +28,19 @@ def get_similarity(image_id, actual_description, guess_description, leaderboard_
 			"guess_description": guess_description
 		}
 	).json()
-	print(response)
-	return response["similarity_score"]
+	leaderboard = get_leaderboard(image_id, k=10)
+	return response["similarity_score"], leaderboard
+
+def get_leaderboard(image_id: int, k: int = 10) -> pd.DataFrame:
+	data = requests.get(f"http://127.0.0.1:8000/leaderboard?image_id={image_id}&k={k}").json()
+	df = pd.DataFrame.from_records(data, columns=["leaderboard_name", "similarity_score"])
+	placeholder_df = pd.DataFrame({"leaderboard_name": k*["John Dough"], "similarity_score": k*[0.0]})
+	df = pd.concat([df,placeholder_df])
+	df["similarity_score"] = df["similarity_score"].round(4)
+	return df
 
 def get_frontend():
-	initial_id, initial_description, initial_image = refresh_image()
-	print(initial_id, initial_description, initial_image)
+	initial_id, initial_description, initial_image, _, _, _, initial_leaderboard = refresh_image()
 	with gr.Blocks() as demo:
 		with gr.Row():
 			introduction = gr.Markdown("""
@@ -49,16 +58,18 @@ def get_frontend():
 		with gr.Row():
 			with gr.Column(scale=1):
 				candidate_image = gr.Image(initial_image ,type="pil", shape=(20,20))
-			with gr.Column(scale=2):
+			with gr.Column(scale=1):
+				leaderboard = gr.Dataframe(value=initial_leaderboard, row_count=(10,'fixed'), max_rows=10)
+			with gr.Column(scale=1):
 				id = gr.Textbox(value=initial_id, label="Id", visible=False)
 				actual_description = gr.Textbox(value=initial_description, label="Actual description", visible=False)
 				leaderboard_name = gr.Textbox(label="Name on Leaderboard", placeholder="John Dough")
-				description_guess = gr.Textbox(label="Image description guess")
+				description_guess = gr.Textbox(label="Image description guess", lines=2)
 				similarity_score = gr.Number(label="Similarity score")
 				submit = gr.Button("Submit")
-				submit.click(fn=get_similarity, inputs=[id, actual_description, description_guess, leaderboard_name], outputs=similarity_score)
+				submit.click(fn=get_similarity, inputs=[id, actual_description, description_guess, leaderboard_name], outputs=[similarity_score, leaderboard])
 				new_image = gr.Button("Get new image")
-				new_image.click(fn=refresh_image, inputs=None, outputs=[id, actual_description, candidate_image])
+				new_image.click(fn=refresh_image, inputs=None, outputs=[id, actual_description, candidate_image, description_guess, leaderboard_name, similarity_score, leaderboard])
 	demo.launch()
 	return demo
 
