@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-
 class ImageBase(BaseModel):
 	description: str
 	base64: str
@@ -18,9 +17,11 @@ class Image(ImageBase):
 
 
 class PredictionBase(BaseModel):
+	image_id: int
+	leaderboard_name: str
 	guess_description: str
 	similarity_score: str
-	image_id: int
+	
 
 
 class PredictionCreate(PredictionBase):

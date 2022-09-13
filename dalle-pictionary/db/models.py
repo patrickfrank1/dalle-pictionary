@@ -16,7 +16,8 @@ class Prediction(Base):
 	__tablename__ = "prediction"
 
 	id = Column(Integer, primary_key=True, index=True)
-	guess_description = Column(String, index=True)
+	leaderboard_name = Column(String)
+	guess_description = Column(String)
 	similarity_score = Column(Float)
 
 	image_id = Column(Integer, ForeignKey("image.id"))
