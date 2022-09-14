@@ -1,26 +1,27 @@
-from typing import Tuple
+from typing import List
 from transformers import AutoTokenizer, AutoModel
-import torch
+import torch as pt
 import torch.nn.functional as F
 
 class SentenceTransformer:
 	def __init__(self):
-		self.tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
-		self.model = AutoModel.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+		self.hf_model_id = 'sentence-transformers/all-MiniLM-L6-v2'
+		self.tokenizer: AutoTokenizer = AutoTokenizer.from_pretrained(self.hf_model_id)
+		self.model: AutoModel = AutoModel.from_pretrained(self.hf_model_id)
 	
-	def mean_pooling(self, model_output, attention_mask):
+	def mean_pooling(self, model_output: pt.Tensor, attention_mask: pt.Tensor):
 		token_embeddings = model_output[0]
 		input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-		return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+		return pt.sum(token_embeddings * input_mask_expanded, 1) / pt.clamp(input_mask_expanded.sum(1), min=1e-9)
 	
-	def embed_sentences(self, sentences):
+	def embed_sentences(self, sentences: List[str]) -> pt.Tensor:
 		encoded_input = self.tokenizer(sentences, padding=True, truncation=True, return_tensors='pt')
-		with torch.no_grad():
+		with pt.no_grad():
 			model_output = self.model(**encoded_input)
 			sentence_embeddings = self.mean_pooling(model_output, encoded_input['attention_mask'])
 			sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
 		return sentence_embeddings
 
-	def sentence_similarity(self, source, query):
+	def sentence_similarity(self, source: str, query: str) -> pt.Tensor:
 		embeddings = self.embed_sentences([source, query])
-		return torch.dot(embeddings[0], embeddings[1])
+		return pt.dot(embeddings[0], embeddings[1])
